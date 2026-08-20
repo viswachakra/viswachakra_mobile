@@ -16,12 +16,30 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _index = 0;
+  bool _isAdmin = false;
   late Future<List<ClaimCase>> _casesFuture;
 
   @override
   void initState() {
     super.initState();
+    final email =
+        (Supabase.instance.client.auth.currentUser?.email ?? '').trim().toLowerCase();
+    _isAdmin = email == 'admin@vvistech.com';
     _casesFuture = _loadCases();
+  }
+
+  // Dashboard is admin-only; everyone else gets Cases + Sync.
+  List<String> get _tabs =>
+      _isAdmin ? const ['dash', 'cases', 'sync'] : const ['cases', 'sync'];
+  String get _title {
+    switch (_tabs[_index]) {
+      case 'dash':
+        return 'Dashboard';
+      case 'cases':
+        return 'Cases';
+      default:
+        return 'Sync History';
+    }
   }
 
   // Load cases, then run change-detection notifications (fire-and-forget).
@@ -36,14 +54,13 @@ class _HomeScreenState extends State<HomeScreen> {
     await _casesFuture;
   }
 
-  static const _titles = ['Dashboard', 'Cases', 'Sync History'];
-
   @override
   Widget build(BuildContext context) {
+    final tab = _tabs[_index];
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 16,
-        title: Text(_titles[_index],
+        title: Text(_title,
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
@@ -54,7 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(width: 6),
         ],
       ),
-      body: _index == 2
+      body: tab == 'sync'
           ? const SyncTab()
           : FutureBuilder<List<ClaimCase>>(
               future: _casesFuture,
@@ -67,7 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 final cases = snap.data!;
-                return _index == 0
+                return tab == 'dash'
                     ? DashboardTab(cases: cases, onRefresh: _reload)
                     : CasesTab(cases: cases, onRefresh: _reload);
               },
@@ -75,16 +92,17 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
-        destinations: const [
-          NavigationDestination(
-              icon: Icon(Icons.dashboard_outlined),
-              selectedIcon: Icon(Icons.dashboard),
-              label: 'Dashboard'),
-          NavigationDestination(
+        destinations: [
+          if (_isAdmin)
+            const NavigationDestination(
+                icon: Icon(Icons.dashboard_outlined),
+                selectedIcon: Icon(Icons.dashboard),
+                label: 'Dashboard'),
+          const NavigationDestination(
               icon: Icon(Icons.receipt_long_outlined),
               selectedIcon: Icon(Icons.receipt_long),
               label: 'Cases'),
-          NavigationDestination(
+          const NavigationDestination(
               icon: Icon(Icons.sync_outlined),
               selectedIcon: Icon(Icons.sync),
               label: 'Sync'),
