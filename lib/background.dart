@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:workmanager/workmanager.dart';
 import 'config.dart';
@@ -32,6 +33,9 @@ void callbackDispatcher() {
 /// Registers an hourly background check (Android). Safe to call on every launch —
 /// ExistingPeriodicWorkPolicy.keep avoids creating duplicates.
 Future<void> initBackground() async {
+  // iOS background needs BGTaskScheduler setup (Info.plist + AppDelegate) — a follow-up;
+  // foreground/on-open notifications still work on iOS. See IOS_APPSTORE_SETUP.md.
+  if (!Platform.isAndroid) return;
   await Workmanager().initialize(callbackDispatcher);
   await Workmanager().registerPeriodicTask(
     _bgTask,
