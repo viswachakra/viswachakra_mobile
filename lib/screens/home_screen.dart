@@ -4,6 +4,7 @@ import '../data.dart';
 import '../models.dart';
 import '../notifications.dart';
 import '../theme.dart';
+import 'attention_tab.dart';
 import 'dashboard_tab.dart';
 import 'cases_tab.dart';
 import 'sync_tab.dart';
@@ -22,17 +23,18 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    final email =
-        (Supabase.instance.client.auth.currentUser?.email ?? '').trim().toLowerCase();
-    _isAdmin = email == 'admin@vvistech.com';
+    _isAdmin = isAdminUser;
     _casesFuture = _loadCases();
   }
 
-  // Dashboard is admin-only; everyone else gets Cases + Sync.
-  List<String> get _tabs =>
-      _isAdmin ? const ['dash', 'cases', 'sync'] : const ['cases', 'sync'];
+  // Alerts is the landing tab for everyone; Dashboard stays admin-only.
+  List<String> get _tabs => _isAdmin
+      ? const ['alerts', 'dash', 'cases', 'sync']
+      : const ['alerts', 'cases', 'sync'];
   String get _title {
     switch (_tabs[_index]) {
+      case 'alerts':
+        return 'Needs attention';
       case 'dash':
         return 'Dashboard';
       case 'cases':
@@ -84,15 +86,27 @@ class _HomeScreenState extends State<HomeScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 final cases = snap.data!;
-                return tab == 'dash'
-                    ? DashboardTab(cases: cases, onRefresh: _reload)
-                    : CasesTab(cases: cases, onRefresh: _reload);
+                switch (tab) {
+                  case 'alerts':
+                    return AttentionTab(
+                        cases: cases,
+                        onRefresh: _reload,
+                        showMoney: _isAdmin);
+                  case 'dash':
+                    return DashboardTab(cases: cases, onRefresh: _reload);
+                  default:
+                    return CasesTab(cases: cases, onRefresh: _reload);
+                }
               },
             ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: [
+          const NavigationDestination(
+              icon: Icon(Icons.notifications_active_outlined),
+              selectedIcon: Icon(Icons.notifications_active),
+              label: 'Alerts'),
           if (_isAdmin)
             const NavigationDestination(
                 icon: Icon(Icons.dashboard_outlined),

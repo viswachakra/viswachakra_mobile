@@ -3,11 +3,17 @@ import 'models.dart';
 
 SupabaseClient get _db => Supabase.instance.client;
 
+/// Only this account sees rupee figures — the Dashboard, the shortfall list and
+/// the money notifications. Everyone else gets the blocked-claims work queue.
+const adminEmail = 'admin@vvistech.com';
+bool get isAdminUser =>
+    (_db.auth.currentUser?.email ?? '').trim().toLowerCase() == adminEmail;
+
 const _caseCols =
     'case_no,claim_no,patient_name,card_no,contact_no,district,mandal,village,'
     'nwh_name,ip_no,category,ip_registration_dt,procedure_name,claim_status,'
     'status_date,paid_date,latest_comment,workflow_note,claimed_amount,'
-    'paid_amount,deduction,settlement_days,is_paid';
+    'paid_amount,approved_amount,deduction,settlement_days,is_paid';
 
 Future<List<ClaimCase>> fetchAllCases() async {
   final out = <ClaimCase>[];

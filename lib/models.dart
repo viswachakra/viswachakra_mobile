@@ -29,6 +29,7 @@ class ClaimCase {
   final String? workflowNote;
   final int? claimedAmount;
   final int? paidAmount;
+  final int? approvedAmount;
   final int? deduction;
   final int? settlementDays;
   final bool isPaid;
@@ -54,6 +55,7 @@ class ClaimCase {
         workflowNote = m['workflow_note']?.toString(),
         claimedAmount = _toInt(m['claimed_amount']),
         paidAmount = _toInt(m['paid_amount']),
+        approvedAmount = _toInt(m['approved_amount']),
         deduction = _toInt(m['deduction']),
         settlementDays = _toInt(m['settlement_days']),
         isPaid = m['is_paid'] == true ||
@@ -105,6 +107,50 @@ class SyncRun {
         message = m['message']?.toString();
 
   bool get ok => RegExp(r'success', caseSensitive: false).hasMatch(status ?? '');
+}
+
+// ---- what needs the owner's attention -------------------------------------
+// One definition, shared by the Alerts screen and the notification check, so
+// the badge and the push can never disagree.
+
+/// Settled for less than it was raised for (the ₹35,000 → ₹25,000 case).
+bool isShortPaid(ClaimCase c) => c.isPaid && (c.deduction ?? 0) > 0;
+
+/// The amount raised, whether or not the claim has been paid yet.
+int claimedOf(ClaimCase c) =>
+    c.isPaid ? ((c.paidAmount ?? 0) + (c.deduction ?? 0)) : (c.claimedAmount ?? 0);
+
+/// Sanctioned below the amount raised, but the money has NOT arrived yet.
+/// This is the early warning: the approval figure shows up on the workflow
+/// months before the payment does.
+bool isShortApproved(ClaimCase c) {
+  if (c.isPaid) return false;
+  final a = c.approvedAmount;
+  final claimed = c.claimedAmount ?? 0;
+  return a != null && claimed > 0 && a < claimed;
+}
+
+/// The gap between what was raised and what was sanctioned — from the approval
+/// figure before payment, from the paid figure after. 0 when there is no gap.
+int shortfallOf(ClaimCase c) {
+  if (c.isPaid) return c.deduction ?? 0;
+  if (!isShortApproved(c)) return 0;
+  return (c.claimedAmount ?? 0) - (c.approvedAmount ?? 0);
+}
+
+/// What the Trust sanctioned, if known.
+int? sanctionedOf(ClaimCase c) => c.isPaid ? c.paidAmount : c.approvedAmount;
+
+/// Why a claim is stuck, or null if it is not blocked.
+/// 'failed' | 'feedback' | 'rejected'
+String? blockedKind(ClaimCase c) {
+  if (c.isPaid) return null;
+  final s = c.claimStatus ?? '';
+  bool m(String p) => RegExp(p, caseSensitive: false).hasMatch(s);
+  if (m(r'failed transaction')) return 'failed';
+  if (m(r'patient feedback not submitted')) return 'feedback';
+  if (m(r'reject|cancelled by trust')) return 'rejected';
+  return null;
 }
 
 // ---- formatting ----
