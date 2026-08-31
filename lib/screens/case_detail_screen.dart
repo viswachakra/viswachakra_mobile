@@ -100,9 +100,14 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
   }
 
   Widget _amountRow(ClaimCase c) {
+    // Use claimedOf() rather than the raw claimed_amount column. Some older
+    // rows had claimed_amount overwritten with the PAID figure, which rendered
+    // impossible cards like "Claimed 15,000 / Deducted 20,500". Deriving it as
+    // paid + deduction reconstructs the real raised amount and keeps this
+    // screen consistent with the Alerts list even if the column regresses.
     return Row(
       children: [
-        _amtCard('Claimed', inr(c.claimedAmount), AppColors.indigo),
+        _amtCard('Claimed', inr(claimedOf(c)), AppColors.indigo),
         const SizedBox(width: 10),
         _amtCard('Paid', c.paidAmount != null ? inr(c.paidAmount) : '–',
             AppColors.greenFg),
