@@ -1,4 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Required for release builds. Flutter injects INTERNET into the debug and
+         profile manifests automatically, but NOT into main, so without this a
+         release APK cannot resolve any host: every Supabase call fails with
+         "Failed host lookup ... errno = 7" while debug builds work fine. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
         android:label="Viswachakra Claims"
