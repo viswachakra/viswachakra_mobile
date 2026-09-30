@@ -126,6 +126,10 @@ class _AttentionTabState extends State<AttentionTab> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 28),
         children: [
+          // ---- how fresh is any of this? --------------------------------
+          _FreshnessBanner(hours: dataAgeHours(widget.cases)),
+          const SizedBox(height: 14),
+
           // ---- blocked claims -------------------------------------------
           const _SectionTitle('Needs your attention'),
           if (groups.isEmpty)
@@ -138,6 +142,9 @@ class _AttentionTabState extends State<AttentionTab> {
 
           // ---- short-paid: rupee figures, admin only --------------------
           if (widget.showMoney) ...[
+            const SizedBox(height: 22),
+            const _SectionTitle('Settled claims'),
+            _PaidSplit(cases: widget.cases),
             const SizedBox(height: 22),
             const _SectionTitle('Approved for less than raised'),
             _ShortSummary(count: shortAll, total: totalCut, early: earlyCount),
@@ -187,6 +194,52 @@ class _AttentionTabState extends State<AttentionTab> {
                 color: on ? Colors.white : AppColors.text2,
                 fontSize: 13,
                 fontWeight: FontWeight.w600)),
+      ),
+    );
+  }
+}
+
+/// Says how old the data is, and shouts when the sync has stopped.
+/// Green under 6h, amber to 24h, red beyond - a red bar here is the signal
+/// that would have caught the 8-day September outage on day one.
+class _FreshnessBanner extends StatelessWidget {
+  final double? hours;
+  const _FreshnessBanner({required this.hours});
+
+  @override
+  Widget build(BuildContext context) {
+    final h = hours;
+    late final Color bg, fg;
+    late final IconData icon;
+    late final String text;
+
+    if (h == null) {
+      bg = AppColors.amberBg; fg = AppColors.amberFg; icon = Icons.help_outline;
+      text = "Can't tell how fresh this data is";
+    } else if (h < 6) {
+      bg = AppColors.greenBg; fg = AppColors.greenFg; icon = Icons.cloud_done_outlined;
+      text = 'Up to date — synced ${agoText(h)}';
+    } else if (h < 24) {
+      bg = AppColors.amberBg; fg = AppColors.amberFg; icon = Icons.schedule;
+      text = 'Last synced ${agoText(h)}';
+    } else {
+      bg = AppColors.redBg; fg = AppColors.redFg; icon = Icons.cloud_off;
+      text = 'Sync may be down — last updated ${agoText(h)}';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
+      child: Row(
+        children: [
+          Icon(icon, size: 17, color: fg),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Text(text,
+                style: TextStyle(
+                    fontSize: 12.5, color: fg, fontWeight: FontWeight.w600)),
+          ),
+        ],
       ),
     );
   }
@@ -325,6 +378,113 @@ class _BlockedRow extends StatelessWidget {
       ),
     );
   }
+}
+
+/// "Paid" on its own hides the thing that matters. Three quarters of settled
+/// claims arrive in full; the rest arrive short, and that gap is the money the
+/// hospital never sees.
+class _PaidSplit extends StatelessWidget {
+  final List<ClaimCase> cases;
+  const _PaidSplit({required this.cases});
+
+  @override
+  Widget build(BuildContext context) {
+    final paid = cases.where((c) => c.isPaid && claimedOf(c) > 0).toList();
+    if (paid.isEmpty) return const SizedBox.shrink();
+    final short = paid.where((c) => (c.deduction ?? 0) > 0).toList();
+    final full = paid.length - short.length;
+    final cut = short.fold<int>(0, (t, c) => t + (c.deduction ?? 0));
+    final received = paid.fold<int>(0, (t, c) => t + (c.paidAmount ?? 0));
+    final raised = paid.fold<int>(0, (t, c) => t + claimedOf(c));
+    final pctShort = short.length / paid.length * 100;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(child: _fig('RAISED', inr(raised), AppColors.text)),
+                Expanded(child: _fig('RECEIVED', inr(received), AppColors.greenFg)),
+              ],
+            ),
+            const SizedBox(height: 14),
+            // proportion bar: green = paid in full, red = short
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: full == 0 ? 1 : full,
+                    child: Container(height: 8, color: AppColors.greenFg),
+                  ),
+                  Expanded(
+                    flex: short.isEmpty ? 1 : short.length,
+                    child: Container(height: 8, color: AppColors.redFg),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            _row(AppColors.greenFg, 'Paid in full', '$full claims',
+                '${(100 - pctShort).toStringAsFixed(0)}%'),
+            const SizedBox(height: 7),
+            _row(AppColors.redFg, 'Paid short', '${short.length} claims',
+                '${pctShort.toStringAsFixed(0)}%'),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+              decoration: BoxDecoration(
+                  color: AppColors.redBg, borderRadius: BorderRadius.circular(8)),
+              child: Text('${inr(cut)} never received',
+                  style: const TextStyle(
+                      color: AppColors.redFg,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _row(Color dot, String label, String count, String pct) => Row(
+        children: [
+          Container(width: 9, height: 9,
+              decoration: BoxDecoration(color: dot, shape: BoxShape.circle)),
+          const SizedBox(width: 9),
+          Expanded(
+              child: Text(label,
+                  style: const TextStyle(fontSize: 13, color: AppColors.text2))),
+          Text(count,
+              style: const TextStyle(
+                  fontSize: 13, fontWeight: FontWeight.w600)),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 38,
+            child: Text(pct,
+                textAlign: TextAlign.right,
+                style: const TextStyle(
+                    fontSize: 12, color: AppColors.text3, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      );
+
+  Widget _fig(String label, String value, Color color) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label,
+              style: const TextStyle(
+                  color: AppColors.text3, fontSize: 10, letterSpacing: .4)),
+          const SizedBox(height: 2),
+          Text(value,
+              style: TextStyle(
+                  color: color, fontSize: 17, fontWeight: FontWeight.bold)),
+        ],
+      );
 }
 
 class _ShortSummary extends StatelessWidget {

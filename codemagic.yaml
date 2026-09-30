@@ -25,7 +25,7 @@ workflows:
         distribution_type: app_store        # automatic signing via the ASC API key above
         bundle_identifier: com.vvistech.viswachakraMobile
       vars:
-        APP_STORE_APP_ID: 0000000000         # <-- your app's numeric Apple ID from App Store Connect
+        APP_STORE_APP_ID: 6817792157         # Viswachakra Claims in App Store Connect
     triggering:
       events:
         - push

@@ -3,17 +3,56 @@ import 'models.dart';
 
 SupabaseClient get _db => Supabase.instance.client;
 
-/// Only this account sees rupee figures — the Dashboard, the shortfall list and
-/// the money notifications. Everyone else gets the blocked-claims work queue.
+// ---- roles ----------------------------------------------------------------
+// 'doctor' sees everything including rupee figures and decides what a claim
+// reply says. 'scribe' enters that reply into the portal: work queue and case
+// details, but no money.
+//
+// The role lives in Supabase (user_roles). Before that table existed this was a
+// hardcoded email compared in three places across two apps; adding a user meant
+// shipping a build.
+
+/// Fallback only — used if the role lookup fails, so a network blip can never
+/// lock the doctor out of his own figures.
 const adminEmail = 'admin@vvistech.com';
-bool get isAdminUser =>
-    (_db.auth.currentUser?.email ?? '').trim().toLowerCase() == adminEmail;
+
+String? _cachedRole;
+
+String _roleFromEmail() =>
+    (_db.auth.currentUser?.email ?? '').trim().toLowerCase() == adminEmail
+        ? 'doctor'
+        : 'scribe';
+
+/// Read this user's role once after sign-in. Falls back to the old email check
+/// rather than failing closed.
+Future<String> loadRole() async {
+  final uid = _db.auth.currentUser?.id;
+  if (uid == null) return _cachedRole = 'scribe';
+  try {
+    final row = await _db
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', uid)
+        .maybeSingle();
+    final role = row?['role']?.toString();
+    if (role == 'doctor' || role == 'scribe') return _cachedRole = role!;
+  } catch (_) {
+    // table missing, offline, RLS — fall through to the email fallback
+  }
+  return _cachedRole = _roleFromEmail();
+}
+
+/// True for the doctor. Safe to call before [loadRole] — it falls back.
+bool get isDoctor => (_cachedRole ?? _roleFromEmail()) == 'doctor';
+
+/// Clear on sign-out so the next user does not inherit this one's role.
+void clearRole() => _cachedRole = null;
 
 const _caseCols =
     'case_no,claim_no,patient_name,card_no,contact_no,district,mandal,village,'
     'nwh_name,ip_no,category,ip_registration_dt,procedure_name,claim_status,'
     'status_date,paid_date,latest_comment,workflow_note,claimed_amount,'
-    'paid_amount,approved_amount,deduction,settlement_days,is_paid';
+    'paid_amount,approved_amount,deduction,settlement_days,is_paid,last_synced';
 
 Future<List<ClaimCase>> fetchAllCases() async {
   final out = <ClaimCase>[];

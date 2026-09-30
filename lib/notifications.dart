@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'data.dart' show isAdminUser;
+import 'data.dart' show isDoctor, loadRole;
 import 'models.dart';
 
 final FlutterLocalNotificationsPlugin _fln = FlutterLocalNotificationsPlugin();
@@ -104,7 +104,9 @@ Future<void> detectAndNotify(List<ClaimCase> cases) async {
       await _show(3, '🚫 Needs your attention',
           '$newlyBlocked claim${newlyBlocked > 1 ? 's' : ''} blocked — open Alerts to see why');
     }
-    if (!isAdminUser) return;
+    // Runs in a background isolate too, where nothing has loaded the role yet.
+    await loadRole();
+    if (!isDoctor) return;
 
     if (paidFull > 0) {
       await _show(1, '💰 Payment received',

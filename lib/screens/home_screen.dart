@@ -23,11 +23,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _isAdmin = isAdminUser;
+    // Optimistic: isDoctor falls back to the email check until the real role
+    // arrives, so the first frame is never wrong for the doctor.
+    _isAdmin = isDoctor;
     _casesFuture = _loadCases();
   }
 
-  // Alerts is the landing tab for everyone; Dashboard stays admin-only.
+  // Alerts is the landing tab for everyone; Dashboard is the doctor's.
   List<String> get _tabs => _isAdmin
       ? const ['alerts', 'dash', 'cases', 'sync']
       : const ['alerts', 'cases', 'sync'];
@@ -44,8 +46,19 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // Load cases, then run change-detection notifications (fire-and-forget).
+  // Resolve the role from Supabase, then load cases and run change-detection
+  // notifications (fire-and-forget).
   Future<List<ClaimCase>> _loadCases() async {
+    await loadRole();
+    final doctor = isDoctor;
+    if (mounted && doctor != _isAdmin) {
+      // Role differed from the email fallback — fix the tabs, and keep the
+      // selected index in range now that the tab list may have shrunk.
+      setState(() {
+        _isAdmin = doctor;
+        if (_index >= _tabs.length) _index = 0;
+      });
+    }
     final cases = await fetchAllCases();
     detectAndNotify(cases);
     return cases;
@@ -68,7 +81,10 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             tooltip: 'Sign out',
             icon: const Icon(Icons.logout, size: 20),
-            onPressed: () => Supabase.instance.client.auth.signOut(),
+            onPressed: () {
+              clearRole(); // so the next user does not inherit this role
+              Supabase.instance.client.auth.signOut();
+            },
           ),
           const SizedBox(width: 6),
         ],

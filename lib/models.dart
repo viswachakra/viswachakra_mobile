@@ -33,6 +33,7 @@ class ClaimCase {
   final int? deduction;
   final int? settlementDays;
   final bool isPaid;
+  final String? lastSynced;
 
   ClaimCase.fromMap(Map<String, dynamic> m)
       : caseNo = m['case_no']?.toString() ?? '',
@@ -58,6 +59,7 @@ class ClaimCase {
         approvedAmount = _toInt(m['approved_amount']),
         deduction = _toInt(m['deduction']),
         settlementDays = _toInt(m['settlement_days']),
+        lastSynced = m['last_synced']?.toString(),
         isPaid = m['is_paid'] == true ||
             RegExp(r'paid|payment done', caseSensitive: false)
                 .hasMatch(m['claim_status']?.toString() ?? '');
@@ -140,6 +142,36 @@ int shortfallOf(ClaimCase c) {
 
 /// What the Trust sanctioned, if known.
 int? sanctionedOf(ClaimCase c) => c.isPaid ? c.paidAmount : c.approvedAmount;
+
+/// How long ago the scraper last reached the portal, in hours, or null if
+/// unknown. In Sept 2026 the sync died silently for 8 days and nothing in the
+/// app said so - this is what makes that visible.
+double? dataAgeHours(List<ClaimCase> cases) {
+  DateTime? newest;
+  for (final c in cases) {
+    final s = c.lastSynced;
+    if (s == null || s.isEmpty) continue;
+    final d = DateTime.tryParse(s);
+    if (d == null) continue;
+    if (newest == null || d.isAfter(newest)) newest = d;
+  }
+  if (newest == null) return null;
+  return DateTime.now().toUtc().difference(newest.toUtc()).inMinutes / 60.0;
+}
+
+/// "4 minutes ago" / "3 hours ago" / "8 days ago"
+String agoText(double hours) {
+  if (hours < 1) {
+    final m = (hours * 60).round();
+    return m <= 1 ? 'just now' : '$m minutes ago';
+  }
+  if (hours < 48) {
+    final h = hours.round();
+    return h == 1 ? '1 hour ago' : '$h hours ago';
+  }
+  final d = (hours / 24).round();
+  return '$d days ago';
+}
 
 /// Why a claim is stuck, or null if it is not blocked.
 /// 'failed' | 'feedback' | 'rejected'
