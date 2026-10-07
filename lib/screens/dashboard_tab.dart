@@ -31,8 +31,8 @@ class DashboardTab extends StatelessWidget {
                   label: 'Total claimed',
                   value: inrShort(s.totalClaimed),
                   sub: '${s.totalCases} claims',
-                  c1: const Color(0xFF6366F1),
-                  c2: const Color(0xFF8B5CF6)),
+                  c1: const Color(0xFFC9A227),
+                  c2: const Color(0xFFA8841C)),
               _Kpi(
                   label: 'Total received',
                   value: inrShort(s.totalPaid),
@@ -55,8 +55,8 @@ class DashboardTab extends StatelessWidget {
                   label: 'Avg settlement',
                   value: '${s.avgSettlement}',
                   sub: 'days to pay',
-                  c1: const Color(0xFF38BDF8),
-                  c2: const Color(0xFF2563EB)),
+                  c1: const Color(0xFFB07A3A),
+                  c2: const Color(0xFF7E5420)),
               _Kpi(
                   label: 'Paid claims',
                   value: '${s.paidCount}',
@@ -87,7 +87,7 @@ class _Hero extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF4F46E5), Color(0xFF7C3AED), Color(0xFFDB2777)],
+          colors: [Color(0xFF8E1A24), Color(0xFFB4232E), Color(0xFFC9A227)],
         ),
         borderRadius: BorderRadius.circular(16),
       ),

@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 
-// Matches the web app's indigo/violet palette.
+// Deep red and gold, matching the Ashoka-chakra icon; ivory background.
 class AppColors {
-  static const primary = Color(0xFF4F46E5);
-  static const primaryDark = Color(0xFF4338CA);
-  static const bg = Color(0xFFF6F7FB);
+  static const primary = Color(0xFFB4232E);     // deep red
+  static const primaryDark = Color(0xFF8E1A24);
+  static const bg = Color(0xFFFAF7F1);          // ivory
   static const card = Colors.white;
   static const text = Color(0xFF101322);
   static const text2 = Color(0xFF4B5265);
   static const text3 = Color(0xFF99A0B5);
-  static const border = Color(0xFFE5E7EF);
+  static const border = Color(0xFFE9E2D3);
   static const greenBg = Color(0xFFD7F5E3);
   static const greenFg = Color(0xFF065F46);
   static const amberBg = Color(0xFFFEF3C7);
   static const amberFg = Color(0xFF92400E);
   static const redBg = Color(0xFFFEE2E2);
   static const redFg = Color(0xFF991B1B);
-  static const indigo = Color(0xFF6366F1);
+  static const indigo = Color(0xFFC9A227);      // gold accent (name kept for call sites)
 }
 
 ThemeData buildTheme() {
@@ -28,6 +28,12 @@ ThemeData buildTheme() {
       primary: AppColors.primary,
     ),
     fontFamily: 'Roboto',
+    navigationBarTheme: NavigationBarThemeData(
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      indicatorColor: const Color(0xFFF8E1E3),
+      elevation: 0,
+    ),
     appBarTheme: const AppBarTheme(
       backgroundColor: Colors.white,
       foregroundColor: AppColors.text,

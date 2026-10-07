@@ -53,12 +53,12 @@ class CashFlowChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const indigo = Color(0xFF6366F1);
+    const indigo = Color(0xFFB4232E);
     const green = Color(0xFF10B981);
     final step = (points.length / 6).ceil().clamp(1, 99);
     return ChartCard(
       title: 'Cash flow by month',
-      subtitle: 'Claims billed (purple) vs payments received (green). They rarely line up — the insurer pays in bulk batches.',
+      subtitle: 'Claims billed (red) vs payments received (green). They rarely line up — the insurer pays in bulk batches.',
       legend: Row(children: [
         _legendDot(indigo, 'Claims raised'),
         const SizedBox(width: 16),
