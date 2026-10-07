@@ -119,28 +119,29 @@ class _CaseCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(c.caseNo,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13.5,
-                            color: AppColors.primaryDark)),
-                  ),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-                    decoration: BoxDecoration(
-                        color: sc.bg,
-                        borderRadius: BorderRadius.circular(12)),
-                    child: Text(c.claimStatus ?? '–',
-                        style: TextStyle(
-                            color: sc.fg,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600)),
-                  ),
-                ],
+              // case number and status on separate lines: a long status such
+              // "Claim Stopped Due to Patient Feedback not Submitted - CEO"
+              // otherwise squeezes the case number to one character per line
+              Text(c.caseNo,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13.5,
+                      color: AppColors.primaryDark)),
+              const SizedBox(height: 6),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                  decoration: BoxDecoration(
+                      color: sc.bg,
+                      borderRadius: BorderRadius.circular(12)),
+                  child: Text(c.claimStatus ?? '–',
+                      style: TextStyle(
+                          color: sc.fg,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600)),
+                ),
               ),
               const SizedBox(height: 6),
               Text(c.patientName ?? '(no name)',
