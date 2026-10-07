@@ -3,7 +3,7 @@
 # Full setup steps are in IOS_APPSTORE_SETUP.md.
 #
 # One-time setup in the Codemagic UI before the first build:
-#   1. Sign up at codemagic.io and connect this repo (VVISTECH-git/viswachakra_mobile).
+#   1. Sign up at codemagic.io and connect this repo (viswachakra/viswachakra_mobile).
 #   2. Teams -> Integrations -> App Store Connect: add an API key
 #      (from App Store Connect -> Users and Access -> Integrations, "App Manager" role).
 #      Name that integration exactly:  codemagic   (or change `app_store_connect:` below).

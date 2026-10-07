@@ -30,7 +30,7 @@ account setup on Apple's side + connecting Codemagic. None of it needs a Mac.
 
 ## Step 4 — Set up Codemagic
 1. Sign up at https://codemagic.io with your GitHub, and add this repo
-   (**VVISTECH-git/viswachakra_mobile**).
+   (**viswachakra/viswachakra_mobile**).
 2. **Teams → Integrations → App Store Connect → Connect** → upload the `.p8`, Key ID, Issuer ID.
    Name the integration **`codemagic`** (must match `integrations: app_store_connect:` in `codemagic.yaml`).
 3. Codemagic will detect `codemagic.yaml` automatically. It handles signing certificates and
