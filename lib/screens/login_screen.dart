@@ -68,11 +68,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   Row(
                     children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Image.asset('assets/icon/icon.png',
-                            width: 42, height: 42, fit: BoxFit.cover),
-                      ),
+                      Image.asset('assets/icon/wheel.png',
+                          width: 46, height: 46),
                       const SizedBox(width: 12),
                       const Expanded(
                         child: Column(

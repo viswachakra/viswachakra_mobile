@@ -13,10 +13,10 @@
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
 $root = Split-Path -Parent $PSScriptRoot
-$icon = [System.Drawing.Image]::FromFile("$root\assets\icon\icon.png")
+$icon = [System.Drawing.Image]::FromFile("$root\assets\icon\wheel.png")   # transparent wheel (tool/cut-wheel.ps1)
 New-Item -ItemType Directory -Force "$root\assets\splash" | Out-Null
 
-$corner = ([System.Drawing.Bitmap]$icon).GetPixel(8, 8)
+$corner = (New-Object System.Drawing.Bitmap "$root\assets\icon\icon.png").GetPixel(8, 8)
 "icon paper colour: #{0:X2}{1:X2}{2:X2}  <- set flutter_native_splash.color to this" -f $corner.R, $corner.G, $corner.B
 
 function NewCanvas($w, $h) {
